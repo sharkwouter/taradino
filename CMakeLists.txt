@@ -13,8 +13,9 @@ option(TARADINO_WERROR "Enable -Werror on build" OFF)
 set(TARADINO_DATADIR "" CACHE STRING "Game data file directory")
 set(TARADINO_SUFFIX "" CACHE STRING "Executable file name suffix")
 
-find_package(SDL2 REQUIRED)
-find_package(SDL2_mixer REQUIRED)
+include(FindPkgConfig)
+pkg_search_module(SDL2 REQUIRED sdl2)
+pkg_search_module(SDL2_MIXER REQUIRED SDL2_mixer)
 
 file(GLOB TARADINO_SOURCES
 	${PROJECT_SOURCE_DIR}/rott/*.c
@@ -38,9 +39,13 @@ else()
 endif()
 
 add_executable(${TARADINO_EXEC} ${TARADINO_SOURCES})
-target_link_libraries(${TARADINO_EXEC} PRIVATE SDL2::Main SDL2::Mixer)
+target_link_libraries(${TARADINO_EXEC} PRIVATE ${SDL2_LIBRARIES} ${SDL2_MIXER_LIBRARIES})
 target_compile_definitions(${TARADINO_EXEC} PRIVATE PACKAGE_STRING="${TARADINO_EXEC} ${CMAKE_PROJECT_VERSION}")
 target_compile_definitions(${TARADINO_EXEC} PRIVATE PACKAGE_TARNAME="${TARADINO_EXEC}")
+include_directories(
+    ${SDL2_INCLUDE_DIRS}
+    ${SDL2_MIXER_INCLUDE_DIRS}
+)
 
 if(${TARADINO_SHAREWARE})
 	target_compile_definitions(${TARADINO_EXEC} PRIVATE SHAREWARE=1)
@@ -61,5 +66,13 @@ if(UNIX)
 	install(FILES ${PROJECT_BINARY_DIR}/${TARADINO_EXEC}.desktop DESTINATION ${CMAKE_INSTALL_DATADIR}/applications)
 	install(FILES ${PROJECT_SOURCE_DIR}/misc/taradino.svg DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/scalable/apps RENAME ${TARADINO_EXEC}.svg)
 	install(FILES ${PROJECT_BINARY_DIR}/${TARADINO_EXEC}.6 DESTINATION ${CMAKE_INSTALL_MANDIR}/man6)
+elseif(PSP)
+	create_pbp_file(
+		TARGET ${TARADINO_EXEC}
+		ICON_PATH NULL
+		BACKGROUND_PATH NULL
+		PREVIEW_PATH NULL
+		TITLE ${CMAKE_PROJECT_NAME}
+	)
 endif()
 install(TARGETS ${TARADINO_EXEC} DESTINATION ${CMAKE_INSTALL_BINDIR})
